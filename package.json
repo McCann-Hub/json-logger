@@ -1,10 +1,10 @@
 {
-  "name": "json-logger",
+  "name": "@mccann-hub/json-logger",
   "version": "0.0.0",
   "description": "",
   "main": "./dist/cjs/index.js",
   "scripts": {
-    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' mocha",
+    "test": "cross-env TSX_TSCONFIG_PATH='./tsconfig.test.json' mocha",
     "build:cjs": "tsc --project tsconfig.commonjs.json && tsc-alias -p tsconfig.commonjs.json",
     "build:esm": "tsc --project tsconfig.esm.json && tsc-alias -p tsconfig.esm.json",
     "build": "npm run build:cjs && npm run build:esm",
@@ -17,16 +17,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.9",
     "@types/node": "^22.9.0",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
+    "chai": "^5.1.2",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "mocha": "^10.8.2",
-    "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   },
   "types": "./dist/cjs/index.d.ts",
@@ -48,5 +50,8 @@
   "bugs": {
     "url": "https://github.com/McCann-Hub/json-logger/issues"
   },
-  "homepage": "https://github.com/McCann-Hub/json-logger#readme"
+  "homepage": "https://github.com/McCann-Hub/json-logger#readme",
+  "dependencies": {
+    "winston": "^3.16.0"
+  }
 }

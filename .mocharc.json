@@ -2,9 +2,9 @@
   "extension": [
     "ts"
   ],
-  "spec": "tests/**/*.spec.ts",
+  "spec": "tests/**/*.spec.{ts,mts}",
   "require": [
-    "ts-node/register",
+    "tsx",
     "tsconfig-paths/register"
   ],
   "recursive": true
