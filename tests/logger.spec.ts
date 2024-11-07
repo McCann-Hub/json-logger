@@ -4,6 +4,8 @@ import { Writable } from 'stream';
 import Logger from '../src/index';
 
 describe('Logger Constructor', () => {
+  process.setMaxListeners(0);
+
   let output: string;
   let stream: Writable;
   let transport: winston.transport;

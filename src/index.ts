@@ -1,6 +1,7 @@
 // https://betterstack.com/community/guides/logging/how-to-install-setup-and-use-winston-and-morgan-to-log-node-js-applications
 import winston from 'winston';
-import process from 'node:process'
+import process from 'node:process';
+import { existsSync, readFileSync } from 'node:fs';
 import sanitize from '@utils/sanitize';
 
 // Define your severity levels.
@@ -97,10 +98,24 @@ const defaultTransports = [
 
   // Print all the error level messages inside the error.log file
   new winston.transports.File({
-    filename: 'logs/error.log',
+    filename: './logs/error.log',
     level: 'error',
   }),
 ];
+
+function getAppName() {
+  let appName: string;
+
+  if (existsSync('./package.json')) {
+    appName = JSON.parse(readFileSync('./package.json', 'utf-8')).name;
+  } else if (existsSync('./deno.json')) {
+    appName = JSON.parse(readFileSync('./deno.json', 'utf-8')).name;
+  } else {
+    appName = process.env.LOGGER_APP_NAME ?? '';
+  }
+
+  return appName;
+}
 
 export default function Logger(
   transports: winston.transport | winston.transport[] = defaultTransports,
@@ -114,7 +129,8 @@ export default function Logger(
   return winston.createLogger({
     level: loggerLevel(env),
     defaultMeta: {
-      service: process.env.npm_package_name,
+      application: getAppName(),
+      environment: env,
     },
     levels,
     format: format(env, sensitiveKeys, prettyPrintEnvs),

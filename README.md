@@ -34,6 +34,20 @@ logger.error('An error occurred', { error: new Error('Sample error') });
 
 ### Configuration Options
 
+### Application Name
+
+The logger will attempt to retrieve the application name in the following order of precedence:
+
+1) From package.json (if it exists), using the name field.
+2) From deno.json (if it exists), using the name field.
+3) From the LOGGER_APP_NAME environment variable.
+
+Example for setting LOGGER_APP_NAME:
+
+```bash
+export LOGGER_APP_NAME="MyAppName"
+```
+
 #### Log Output Levels
 
 The logger adjusts output levels based on NODE_ENV:
