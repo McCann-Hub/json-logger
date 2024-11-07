@@ -4,7 +4,7 @@ import path from 'path';
 import Logger from '../src/index';
 
 describe('Application Name Resolution', () => {
-  process.setMaxListeners(0)
+  process.setMaxListeners(0);
 
   afterEach(() => {
     // Restore the file system after each test

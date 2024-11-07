@@ -41,7 +41,7 @@ describe('Logger Constructor', () => {
     expect(logObject.message).to.equal('test message');
     expect(logObject.stack).to.not.equal(undefined);
   });
-  
+
   it('logs debug in dev', () => {
     process.env.NODE_ENV = 'development';
     const logger = Logger(transport);
@@ -66,7 +66,7 @@ describe('Logger Constructor', () => {
     process.env.NODE_ENV = 'local';
     const logger = Logger(transport);
     logger.info('colored log');
-  
+
     expect(output).to.include('\x1B['); // ANSI escape sequence for colors
   });
 
@@ -74,16 +74,15 @@ describe('Logger Constructor', () => {
     process.env.NODE_ENV = 'production';
     const logger = Logger(transport);
     logger.info('uncolored log');
-  
+
     expect(output).to.not.include('\x1B[');
   });
 
   it('applies pretty print formatting in specified environments', () => {
     const logger = Logger(transport, undefined, ['local-test']);
     logger.error('test message');
-  
+
     const logEvents = output.trim();
     expect(logEvents).to.include('  '); // Check for spaces (pretty print)
   });
-
 });
