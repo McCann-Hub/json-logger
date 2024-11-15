@@ -1,6 +1,6 @@
 {
   "name": "@mccann-hub/json-logger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno test --watch ./src/index.ts"
@@ -11,7 +11,7 @@
     "@utils/": "./src/utils/",
     "@utils/sanitize": "./src/utils/sanitize.ts",
     "@std/assert": "jsr:@std/assert@1",
-    "winston": "npm:winston"
+    "winston": "npm:winston@^3.16.0"
   },
   "lint": {
     "include": [

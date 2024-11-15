@@ -104,7 +104,7 @@ export default function Logger(
   transports: winston.transport | winston.transport[] = defaultTransports,
   sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY'],
   prettyPrintEnvs: string[] = ['local'],
-) {
+): winston.Logger {
   const env = process.env.NODE_ENV || 'development';
   // Create the logger instance that has to be exported
   // and used to log messages.
