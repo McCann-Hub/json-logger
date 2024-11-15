@@ -20,7 +20,7 @@ describe('Application Name Resolution', () => {
     });
 
     const logger = Logger();
-    expect(logger.defaultMeta.application).to.equal('AppFromPackage');
+    expect(logger.defaultMeta.app).to.equal('AppFromPackage');
   });
 
   it('falls back to deno.json if package.json does not exist', () => {
@@ -29,7 +29,7 @@ describe('Application Name Resolution', () => {
     });
 
     const logger = Logger();
-    expect(logger.defaultMeta.application).to.equal('AppFromDeno');
+    expect(logger.defaultMeta.app).to.equal('AppFromDeno');
   });
 
   it('uses LOGGER_APP_NAME if neither package.json nor deno.json exists', () => {
@@ -37,6 +37,6 @@ describe('Application Name Resolution', () => {
     process.env.LOGGER_APP_NAME = 'AppFromEnv';
 
     const logger = Logger();
-    expect(logger.defaultMeta.application).to.equal('AppFromEnv');
+    expect(logger.defaultMeta.app).to.equal('AppFromEnv');
   });
 });
