@@ -9,12 +9,27 @@ type LogValue =
   | null
   | undefined;
 
+/**
+ * Represents a generic log object where key-value pairs are logged.
+ * @typedef {Object} LogObject
+ * @property {string | number | boolean | LogObject | Array<LogValue> | null | undefined} [key]
+ */
 export interface LogObject {
   [key: string]: LogValue;
 }
 
+/**
+ * Returns a function that sanitizes sensitive fields in a log object.
+ *
+ * The sanitizer will:
+ * - Redact values of keys matching the provided `sensitiveKeys`.
+ * - Ensure sensitive data is replaced with `***REDACTED***` in logs.
+ *
+ * @param {string[]} sensitiveKeys - List of keys to redact from logs.
+ * @returns {(info: LogObject) => LogObject} A function to sanitize log objects.
+ */
 export default (
-  sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY']
+  sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY'],
 ) => {
   // find sensitive values from environment variables based on partial matches
   const sensitiveValues: string[] = Object.keys(process.env)
@@ -67,7 +82,7 @@ export default (
         const escapedValue = value.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'); // Escape special characters
         sanitizedStr = sanitizedStr.replace(
           new RegExp(escapedValue, 'g'),
-          '***REDACTED***'
+          '***REDACTED***',
         );
       }
     });

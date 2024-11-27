@@ -99,7 +99,20 @@ function getAppName() {
   }
   return appName;
 }
-//
+/**
+ * Creates and returns a Winston logger instance with configurable settings.
+ *
+ * The logger supports:
+ * - Customizable log levels based on the environment.
+ * - JSON log output with optional pretty-printing.
+ * - Sensitive data sanitization.
+ * - Handling of uncaught exceptions and promise rejections.
+ *
+ * @param {winston.transport | winston.transport[]} [transports=[]] - Optional Winston transports for custom log outputs.
+ * @param {string[]} [sensitiveKeys=['SECRET', 'PASSWORD', 'TOKEN', 'KEY']] - List of keys to redact from logs.
+ * @param {string[]} [prettyPrintEnvs=['local']] - List of environments to pretty print logs.
+ * @returns {winston.Logger} A configured Winston logger instance.
+ */
 export default function Logger(
   transports: winston.transport | winston.transport[] = defaultTransports,
   sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY'],

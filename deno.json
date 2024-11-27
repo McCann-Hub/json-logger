@@ -1,6 +1,6 @@
 {
   "name": "@mccann-hub/json-logger",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno test --watch ./src/index.ts"
@@ -14,16 +14,10 @@
     "winston": "npm:winston@^3.16.0"
   },
   "lint": {
-    "include": [
-      "./src/"
-    ],
-    "exclude": [
-      "./tests/**/*.spec.ts"
-    ],
+    "include": ["./src/"],
+    "exclude": ["./tests/**/*.spec.ts"],
     "rules": {
-      "tags": [
-        "recommended"
-      ]
+      "tags": ["recommended"]
     }
   },
   "fmt": {
@@ -33,22 +27,12 @@
     "semiColons": true,
     "singleQuote": true,
     "proseWrap": "preserve",
-    "include": [
-      "./src/"
-    ],
-    "exclude": [
-      "./tests/**/*.spec.ts"
-    ]
+    "include": ["./src/"],
+    "exclude": ["./tests/**/*.spec.ts"]
   },
   "nodeModulesDir": "auto",
-  "exclude": [
-    "./dist/"
-  ],
+  "exclude": ["./dist/"],
   "publish": {
-    "include": [
-      "./src/",
-      "README.md",
-      "deno.json"
-    ]
+    "include": ["./src/", "README.md", "deno.json"]
   }
 }
