@@ -1,5 +1,7 @@
 import process from 'node:process';
 
+const ARRAY_LENGTH_LIMIT = 100;
+
 type LogValue =
   | string
   | number
@@ -48,13 +50,17 @@ export function safeDeepClone(obj: LogValue, seen = new WeakMap()) {
    * WeakMap pairs each seen object with its corresponding clone ({ original -> clone } mapping).
    * This ensures consistency when a reference to the same object appears multiple times in the original structure.
    */
-  const cloned = Array.isArray(obj) ? [] : {} as LogObject;
+  const cloned = Array.isArray(obj) ? ([] as LogValue[]) : ({} as LogObject);
   seen.set(obj, cloned);
 
   if (Array.isArray(obj)) {
-    obj.forEach((item) => {
+    obj.slice(0, ARRAY_LENGTH_LIMIT).forEach((item) => {
       (cloned as LogValue[]).push(safeDeepClone(item, seen));
     });
+    const lengthDiff = obj.length - (cloned as LogValue[]).length;
+    if (lengthDiff > 0) {
+      (cloned as LogValue[]).push(`${lengthDiff} more...`);
+    }
   } else {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
