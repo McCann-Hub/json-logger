@@ -101,13 +101,14 @@ const isScrubbableValue = (value: string) =>
 export default (
   sensitiveKeys: readonly string[] = DEFAULT_SENSITIVE_KEYS,
 ) => {
+  // Field and env names are uppercased before matching, so callers can pass keys in any case
+  const upperKeys = sensitiveKeys.map((sensitive) => sensitive.toUpperCase());
+  const isSensitiveKey = (key: string) =>
+    upperKeys.some((sensitive) => key.toUpperCase().includes(sensitive));
+
   // find sensitive values from environment variables based on partial matches
   const sensitiveValues: string[] = Object.keys(process.env)
-    .filter((envKey) =>
-      sensitiveKeys.some((sensitive) =>
-        envKey.toUpperCase().includes(sensitive)
-      )
-    )
+    .filter(isSensitiveKey)
     .map((envKey) => process.env[envKey] || '')
     .filter(isScrubbableValue);
 
@@ -125,9 +126,6 @@ export default (
     });
     return sanitizedStr;
   };
-
-  const isSensitiveKey = (key: string) =>
-    sensitiveKeys.some((sensitive) => key.toUpperCase().includes(sensitive));
 
   // Multi-value headers such as set-cookie arrive as arrays of strings
   const redactArray = (arr: Array<LogValue>) => {

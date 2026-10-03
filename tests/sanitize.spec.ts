@@ -292,4 +292,23 @@ describe('Logger Sanitization', function () {
     expect(sanitizedInfo.ssn).to.equal('***REDACTED***');
     expect(sanitizedInfo.authorization).to.equal('***REDACTED***');
   });
+
+  it('should match custom keys regardless of their case', function () {
+    process.env.CUSTOMER_SSN = '123-45-6789';
+    try {
+      const sanitizeWithSsn = sanitize(['ssn', 'Pin']);
+
+      const sanitizedInfo = sanitizeWithSsn({
+        SSN: '123-45-6789',
+        card_pin: '0000',
+        message: 'customer 123-45-6789 called',
+      });
+
+      expect(sanitizedInfo.SSN).to.equal('***REDACTED***');
+      expect(sanitizedInfo.card_pin).to.equal('***REDACTED***');
+      expect(sanitizedInfo.message).to.equal('customer ***REDACTED*** called');
+    } finally {
+      delete process.env.CUSTOMER_SSN;
+    }
+  });
 });
