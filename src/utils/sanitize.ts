@@ -69,17 +69,37 @@ export function safeDeepClone(obj: LogValue, seen = new WeakMap()) {
 }
 
 /**
+ * Key fragments redacted by default. Matching is a case-insensitive substring
+ * check, so `AUTH` also catches `authorization`, `x-auth-user`, and `author`.
+ */
+export const DEFAULT_SENSITIVE_KEYS: readonly string[] = Object.freeze([
+  'SECRET',
+  'PASSWORD',
+  'TOKEN',
+  'KEY',
+  'AUTHORIZATION',
+  'AUTH',
+  'COOKIE',
+]);
+
+// Flag and number env values (AUTH_ENABLED=true, COOKIE_MAX_AGE=3600) would
+// otherwise be scrubbed from every log string that happens to contain them.
+const isScrubbableValue = (value: string) =>
+  value !== '' && !/^(true|false|-?\d+(\.\d+)?)$/i.test(value);
+
+/**
  * Returns a function that sanitizes sensitive fields in a log object.
  *
  * The sanitizer will:
- * - Redact values of keys matching the provided `sensitiveKeys`.
+ * - Redact string values, and strings inside array values, of keys matching
+ *   the provided `sensitiveKeys`. Object values are searched recursively.
  * - Ensure sensitive data is replaced with `***REDACTED***` in logs.
  *
  * @param {string[]} sensitiveKeys - List of keys to redact from logs.
  * @returns {(info: LogObject) => LogObject} A function to sanitize log objects.
  */
 export default (
-  sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY'],
+  sensitiveKeys: readonly string[] = DEFAULT_SENSITIVE_KEYS,
 ) => {
   // find sensitive values from environment variables based on partial matches
   const sensitiveValues: string[] = Object.keys(process.env)
@@ -88,7 +108,8 @@ export default (
         envKey.toUpperCase().includes(sensitive)
       )
     )
-    .map((envKey) => process.env[envKey] || '');
+    .map((envKey) => process.env[envKey] || '')
+    .filter(isScrubbableValue);
 
   // Helper function to sanitize strings containing sensitive values
   const sanitizeString = (str: string): string => {
@@ -103,6 +124,20 @@ export default (
       }
     });
     return sanitizedStr;
+  };
+
+  const isSensitiveKey = (key: string) =>
+    sensitiveKeys.some((sensitive) => key.toUpperCase().includes(sensitive));
+
+  // Multi-value headers such as set-cookie arrive as arrays of strings
+  const redactArray = (arr: Array<LogValue>) => {
+    arr.forEach((item, index) => {
+      if (typeof item === 'string') {
+        arr[index] = '***REDACTED***';
+      } else if (item !== null && typeof item === 'object') {
+        recursiveSanitize(item);
+      }
+    });
   };
 
   const recursiveSanitize = (obj: LogObject | Array<LogValue>) => {
@@ -123,15 +158,13 @@ export default (
         }
 
         if (typeof obj[key] === 'string') {
-          if (
-            sensitiveKeys.some((sensitive) =>
-              key.toUpperCase().includes(sensitive)
-            )
-          ) {
+          if (isSensitiveKey(key)) {
             obj[key] = '***REDACTED***';
           } else {
             obj[key] = sanitizeString(obj[key]);
           }
+        } else if (Array.isArray(obj[key]) && isSensitiveKey(key)) {
+          redactArray(obj[key]);
         } else if (Array.isArray(obj[key]) || typeof obj[key] === 'object') {
           recursiveSanitize(obj[key] as LogObject);
         }

@@ -64,11 +64,17 @@ export WINSTON_LEVEL=debug
 
 #### Sensitive Data Sanitization
 
-Sanitize sensitive fields by specifying keys to redact:
+By default the logger redacts any field whose name contains `SECRET`, `PASSWORD`, `TOKEN`, `KEY`, `AUTHORIZATION`, `AUTH`, or `COOKIE`, ignoring case. Fields like `user_password`, `api_token`, `Authorization`, and `set-cookie` appear as `***REDACTED***` in the logs. String values are replaced, every string in an array value is replaced, and object values are searched for sensitive keys of their own.
+
+The match is a substring check, so `AUTH` also redacts fields such as `author`.
+
+Passing your own list replaces the defaults. To add keys instead, spread `DEFAULT_SENSITIVE_KEYS`:
 
 ```javascript
-const logger = Logger(undefined, ['SECRET', 'PASSWORD', 'TOKEN']);
-logger.info('User login', { password: 'secret123', token: 'abc' });
+import Logger, { DEFAULT_SENSITIVE_KEYS } from '@mccann-hub/json-logger';
+
+const logger = Logger(undefined, [...DEFAULT_SENSITIVE_KEYS, 'SSN']);
+logger.info('User login', { password: 'secret123', ssn: '123-45-6789' });
 ```
 
-Fields like `user_password` and `api_token` will appear as `***REDACTED***` in the logs.
+The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and plain numbers, so a flag like `AUTH_ENABLED=true` doesn't redact every "true" in your logs.
