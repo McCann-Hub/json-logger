@@ -3,7 +3,7 @@
 import winston from 'winston';
 import process from 'node:process';
 import { existsSync, readFileSync } from 'node:fs';
-import sanitize from '@utils/sanitize';
+import sanitize, { DEFAULT_SENSITIVE_KEYS } from '@utils/sanitize';
 // Define your severity levels.
 // With them, You can create log files,
 // see or hide levels based on the running ENV.
@@ -49,7 +49,7 @@ winston.addColors(colors);
 // Customize the log format.
 const format = (
   env: string,
-  sensitiveKeys: string[],
+  sensitiveKeys: readonly string[],
   prettyPrintEnvs: string[] = ['local'],
 ) => {
   const sanitizeLogs = sanitize(sensitiveKeys);
@@ -99,6 +99,9 @@ function getAppName() {
   }
   return appName;
 }
+
+export { DEFAULT_SENSITIVE_KEYS };
+
 /**
  * Creates and returns a Winston logger instance with configurable settings.
  *
@@ -109,13 +112,13 @@ function getAppName() {
  * - Handling of uncaught exceptions and promise rejections.
  *
  * @param {winston.transport | winston.transport[]} [transports=[]] - Optional Winston transports for custom log outputs.
- * @param {string[]} [sensitiveKeys=['SECRET', 'PASSWORD', 'TOKEN', 'KEY']] - List of keys to redact from logs.
+ * @param {string[]} [sensitiveKeys=DEFAULT_SENSITIVE_KEYS] - List of keys to redact from logs: SECRET, PASSWORD, TOKEN, KEY, AUTHORIZATION, AUTH, and COOKIE. Passing a list replaces the defaults.
  * @param {string[]} [prettyPrintEnvs=['local']] - List of environments to pretty print logs.
  * @returns {winston.Logger} A configured Winston logger instance.
  */
 export default function Logger(
   transports: winston.transport | winston.transport[] = defaultTransports,
-  sensitiveKeys: string[] = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY'],
+  sensitiveKeys: readonly string[] = DEFAULT_SENSITIVE_KEYS,
   prettyPrintEnvs: string[] = ['local'],
 ): winston.Logger {
   const env = process.env.NODE_ENV || 'development';
