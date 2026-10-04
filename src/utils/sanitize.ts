@@ -138,6 +138,8 @@ export default (
     arr.forEach((item, index) => {
       if (typeof item === 'string') {
         arr[index] = '***REDACTED***';
+      } else if (Array.isArray(item)) {
+        redactArray(item);
       } else if (item !== null && typeof item === 'object') {
         recursiveSanitize(item);
       }

@@ -70,7 +70,7 @@ export WINSTON_LEVEL=debug
 
 #### Sensitive Data Sanitization
 
-By default the logger redacts any field whose name contains `SECRET`, `PASSWORD`, `TOKEN`, `KEY`, `AUTHORIZATION`, `AUTH`, or `COOKIE`, ignoring case. Fields like `user_password`, `api_token`, `Authorization`, and `set-cookie` appear as `***REDACTED***` in the logs. String values are replaced, every string in an array value is replaced, and object values are searched for sensitive keys of their own.
+By default the logger redacts any field whose name contains `SECRET`, `PASSWORD`, `TOKEN`, `KEY`, `AUTHORIZATION`, `AUTH`, or `COOKIE`, ignoring case. Fields like `user_password`, `api_token`, `Authorization`, and `set-cookie` appear as `***REDACTED***` in the logs. String values are replaced, every string in an array value is replaced, including strings in nested arrays, and object values are searched for sensitive keys of their own.
 
 The match is a substring check, so `AUTH` also redacts fields such as `author`.
 

@@ -253,6 +253,17 @@ describe('Logger Sanitization', function () {
     expect(headers.vary).to.deep.equal(['Accept', 'Origin']);
   });
 
+  it('should redact strings in nested arrays under a sensitive key', function () {
+    const logInfo = {
+      api_tokens: [['tok-one', ['tok-two']], 'tok-three'],
+    };
+
+    expect(sanitizeLogs(logInfo).api_tokens).to.deep.equal([
+      ['***REDACTED***', ['***REDACTED***']],
+      '***REDACTED***',
+    ]);
+  });
+
   it('should search objects under an auth key instead of replacing them', function () {
     const logInfo = {
       auth: { username: 'svc-user', password: 'hunter22' },
