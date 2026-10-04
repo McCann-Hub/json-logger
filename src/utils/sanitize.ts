@@ -1,5 +1,7 @@
 import process from 'node:process';
 
+const ARRAY_LENGTH_LIMIT = 100;
+
 type LogValue =
   | string
   | number
@@ -48,13 +50,17 @@ export function safeDeepClone(obj: LogValue, seen = new WeakMap()) {
    * WeakMap pairs each seen object with its corresponding clone ({ original -> clone } mapping).
    * This ensures consistency when a reference to the same object appears multiple times in the original structure.
    */
-  const cloned = Array.isArray(obj) ? [] : {} as LogObject;
+  const cloned = Array.isArray(obj) ? ([] as LogValue[]) : ({} as LogObject);
   seen.set(obj, cloned);
 
   if (Array.isArray(obj)) {
-    obj.forEach((item) => {
+    obj.slice(0, ARRAY_LENGTH_LIMIT).forEach((item) => {
       (cloned as LogValue[]).push(safeDeepClone(item, seen));
     });
+    const lengthDiff = obj.length - (cloned as LogValue[]).length;
+    if (lengthDiff > 0) {
+      (cloned as LogValue[]).push(`[${lengthDiff} more ${lengthDiff === 1 ? 'item' : 'items'}]`);
+    }
   } else {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -82,10 +88,15 @@ export const DEFAULT_SENSITIVE_KEYS: readonly string[] = Object.freeze([
   'COOKIE',
 ]);
 
-// Flag and number env values (AUTH_ENABLED=true, COOKIE_MAX_AGE=3600) would
-// otherwise be scrubbed from every log string that happens to contain them.
+// Flag and short number env values (AUTH_ENABLED=true, COOKIE_MAX_AGE=3600)
+// would otherwise be scrubbed from every log string that happens to contain
+// them. Numbers of six or more digits, counting both sides of a decimal point,
+// look like PINs or numeric tokens, so those are still scrubbed.
+const isShortNumber = (value: string) =>
+  /^-?\d+(\.\d+)?$/.test(value) && value.replace(/\D/g, '').length <= 5;
+
 const isScrubbableValue = (value: string) =>
-  value !== '' && !/^(true|false|-?\d+(\.\d+)?)$/i.test(value);
+  value !== '' && !/^(true|false)$/i.test(value) && !isShortNumber(value);
 
 /**
  * Returns a function that sanitizes sensitive fields in a log object.
@@ -132,6 +143,8 @@ export default (
     arr.forEach((item, index) => {
       if (typeof item === 'string') {
         arr[index] = '***REDACTED***';
+      } else if (Array.isArray(item)) {
+        redactArray(item);
       } else if (item !== null && typeof item === 'object') {
         recursiveSanitize(item);
       }

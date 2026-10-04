@@ -253,6 +253,17 @@ describe('Logger Sanitization', function () {
     expect(headers.vary).to.deep.equal(['Accept', 'Origin']);
   });
 
+  it('should redact strings in nested arrays under a sensitive key', function () {
+    const logInfo = {
+      api_tokens: [['tok-one', ['tok-two']], 'tok-three'],
+    };
+
+    expect(sanitizeLogs(logInfo).api_tokens).to.deep.equal([
+      ['***REDACTED***', ['***REDACTED***']],
+      '***REDACTED***',
+    ]);
+  });
+
   it('should search objects under an auth key instead of replacing them', function () {
     const logInfo = {
       auth: { username: 'svc-user', password: 'hunter22' },
@@ -278,6 +289,51 @@ describe('Logger Sanitization', function () {
     } finally {
       delete process.env.AUTH_ENABLED;
       delete process.env.COOKIE_MAX_AGE;
+    }
+  });
+
+  it('should scrub numeric env values of six or more digits from log strings', function () {
+    process.env.API_TOKEN = '123456';
+    try {
+      const sanitizeWithNumericToken = sanitize();
+
+      const sanitizedInfo = sanitizeWithNumericToken({
+        message: 'request token 123456',
+      });
+
+      expect(sanitizedInfo.message).to.equal('request token ***REDACTED***');
+    } finally {
+      delete process.env.API_TOKEN;
+    }
+  });
+
+  it('should count digits on both sides of the decimal point', function () {
+    process.env.API_TOKEN = '12345.6';
+    try {
+      const sanitizeWithDecimalToken = sanitize();
+
+      const sanitizedInfo = sanitizeWithDecimalToken({
+        message: 'request token 12345.6',
+      });
+
+      expect(sanitizedInfo.message).to.equal('request token ***REDACTED***');
+    } finally {
+      delete process.env.API_TOKEN;
+    }
+  });
+
+  it('should not scrub numeric env values of five digits or fewer', function () {
+    process.env.SESSION_TOKEN_TTL = '86400';
+    try {
+      const sanitizeWithTtl = sanitize();
+
+      const sanitizedInfo = sanitizeWithTtl({
+        message: 'session lasts 86400 seconds',
+      });
+
+      expect(sanitizedInfo.message).to.equal('session lasts 86400 seconds');
+    } finally {
+      delete process.env.SESSION_TOKEN_TTL;
     }
   });
 
@@ -310,5 +366,39 @@ describe('Logger Sanitization', function () {
     } finally {
       delete process.env.CUSTOMER_SSN;
     }
+  });
+  describe('oversized arrays', function () {
+    const numbers = (count: number) => Array.from({ length: count }, (_, i) => i);
+
+    it('keeps the first 100 items and notes how many it dropped', function () {
+      const sanitizedInfo = sanitizeLogs({ ids: numbers(150) });
+
+      const expected = [...numbers(100), '[50 more items]'];
+      expect(sanitizedInfo.ids).to.deep.equal(expected);
+    });
+
+    it('leaves an array of exactly 100 items whole', function () {
+      const sanitizedInfo = sanitizeLogs({ ids: numbers(100) });
+
+      expect(sanitizedInfo.ids).to.deep.equal(numbers(100));
+    });
+
+    it('caps arrays nested inside objects and other arrays', function () {
+      const sanitizedInfo = sanitizeLogs({
+        batch: { rows: numbers(120) },
+        pages: [numbers(101)],
+      });
+
+      expect((sanitizedInfo.batch as LogObject).rows).to.deep.equal([...numbers(100), '[20 more items]']);
+      expect(sanitizedInfo.pages).to.deep.equal([[...numbers(100), '[1 more item]']]);
+    });
+
+    it('redacts the marker along with the items under a sensitive key', function () {
+      const tokens = Array.from({ length: 150 }, (_, i) => `token-${i}`);
+
+      const sanitizedInfo = sanitizeLogs({ api_tokens: tokens });
+
+      expect(sanitizedInfo.api_tokens).to.deep.equal(Array(101).fill('***REDACTED***'));
+    });
   });
 });

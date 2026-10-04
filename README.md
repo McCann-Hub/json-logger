@@ -70,7 +70,7 @@ export WINSTON_LEVEL=debug
 
 #### Sensitive Data Sanitization
 
-By default the logger redacts any field whose name contains `SECRET`, `PASSWORD`, `TOKEN`, `KEY`, `AUTHORIZATION`, `AUTH`, or `COOKIE`, ignoring case. Fields like `user_password`, `api_token`, `Authorization`, and `set-cookie` appear as `***REDACTED***` in the logs. String values are replaced, every string in an array value is replaced, and object values are searched for sensitive keys of their own.
+By default the logger redacts any field whose name contains `SECRET`, `PASSWORD`, `TOKEN`, `KEY`, `AUTHORIZATION`, `AUTH`, or `COOKIE`, ignoring case. Fields like `user_password`, `api_token`, `Authorization`, and `set-cookie` appear as `***REDACTED***` in the logs. String values are replaced, every string in an array value is replaced, including strings in nested arrays, and object values are searched for sensitive keys of their own.
 
 The match is a substring check, so `AUTH` also redacts fields such as `author`.
 
@@ -83,4 +83,8 @@ const logger = Logger(undefined, [...DEFAULT_SENSITIVE_KEYS, 'SSN']);
 logger.info('User login', { password: 'secret123', ssn: '123-45-6789' });
 ```
 
-The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and plain numbers, so a flag like `AUTH_ENABLED=true` doesn't redact every "true" in your logs.
+The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and numbers of up to five digits, so a flag like `AUTH_ENABLED=true` or a setting like `COOKIE_MAX_AGE=3600` doesn't redact every matching word or number in your logs. Numbers with six or more digits in total, counting both sides of a decimal point, are still scrubbed. That covers a numeric API token like `123456` and a value like `12345.6`.
+
+#### Large arrays
+
+The logger writes at most 100 items of any array, at any depth. When it drops items, it appends a string with the count, such as `[150 more items]`. Real data could contain the same text, so read it as a note for people scanning the log, not a field to parse. Under a sensitive key the count is redacted along with the other strings.
