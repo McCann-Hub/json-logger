@@ -78,3 +78,7 @@ logger.info('User login', { password: 'secret123', ssn: '123-45-6789' });
 ```
 
 The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and plain numbers, so a flag like `AUTH_ENABLED=true` doesn't redact every "true" in your logs.
+
+#### Large arrays
+
+The logger writes at most 100 items of any array, at any depth. When it drops items, it appends a string with the count, such as `[150 more items]`. Real data could contain the same text, so read it as a note for people scanning the log, not a field to parse. Under a sensitive key the count is redacted along with the other strings.

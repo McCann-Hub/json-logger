@@ -59,7 +59,7 @@ export function safeDeepClone(obj: LogValue, seen = new WeakMap()) {
     });
     const lengthDiff = obj.length - (cloned as LogValue[]).length;
     if (lengthDiff > 0) {
-      (cloned as LogValue[]).push(`${lengthDiff} more...`);
+      (cloned as LogValue[]).push(`[${lengthDiff} more ${lengthDiff === 1 ? 'item' : 'items'}]`);
     }
   } else {
     for (const key in obj) {

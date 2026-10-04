@@ -32,6 +32,16 @@ describe('Logger Constructor', () => {
     expect(JSON.parse(logEvents[0]).message).to.equal('test message');
   });
 
+  it('writes at most 100 items of an array, then a count of the rest', () => {
+    const logger = Logger(transport);
+    logger.error('batch failed', { ids: Array.from({ length: 250 }, (_, i) => i) });
+
+    const logObject = JSON.parse(output.trim().split('\n')[0]);
+    expect(logObject.ids).to.have.lengthOf(101);
+    expect(logObject.ids[99]).to.equal(99);
+    expect(logObject.ids[100]).to.equal('[150 more items]');
+  });
+
   it('includes the call stack for errors in the JSON log', () => {
     const logger = Logger(transport);
     logger.error(new Error('test message'));

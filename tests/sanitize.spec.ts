@@ -311,4 +311,38 @@ describe('Logger Sanitization', function () {
       delete process.env.CUSTOMER_SSN;
     }
   });
+  describe('oversized arrays', function () {
+    const numbers = (count: number) => Array.from({ length: count }, (_, i) => i);
+
+    it('keeps the first 100 items and notes how many it dropped', function () {
+      const sanitizedInfo = sanitizeLogs({ ids: numbers(150) });
+
+      const expected = [...numbers(100), '[50 more items]'];
+      expect(sanitizedInfo.ids).to.deep.equal(expected);
+    });
+
+    it('leaves an array of exactly 100 items whole', function () {
+      const sanitizedInfo = sanitizeLogs({ ids: numbers(100) });
+
+      expect(sanitizedInfo.ids).to.deep.equal(numbers(100));
+    });
+
+    it('caps arrays nested inside objects and other arrays', function () {
+      const sanitizedInfo = sanitizeLogs({
+        batch: { rows: numbers(120) },
+        pages: [numbers(101)],
+      });
+
+      expect((sanitizedInfo.batch as LogObject).rows).to.deep.equal([...numbers(100), '[20 more items]']);
+      expect(sanitizedInfo.pages).to.deep.equal([[...numbers(100), '[1 more item]']]);
+    });
+
+    it('redacts the marker along with the items under a sensitive key', function () {
+      const tokens = Array.from({ length: 150 }, (_, i) => `token-${i}`);
+
+      const sanitizedInfo = sanitizeLogs({ api_tokens: tokens });
+
+      expect(sanitizedInfo.api_tokens).to.deep.equal(Array(101).fill('***REDACTED***'));
+    });
+  });
 });
