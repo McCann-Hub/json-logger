@@ -292,6 +292,36 @@ describe('Logger Sanitization', function () {
     }
   });
 
+  it('should scrub numeric env values of six or more digits from log strings', function () {
+    process.env.API_TOKEN = '123456';
+    try {
+      const sanitizeWithNumericToken = sanitize();
+
+      const sanitizedInfo = sanitizeWithNumericToken({
+        message: 'request token 123456',
+      });
+
+      expect(sanitizedInfo.message).to.equal('request token ***REDACTED***');
+    } finally {
+      delete process.env.API_TOKEN;
+    }
+  });
+
+  it('should not scrub numeric env values of five digits or fewer', function () {
+    process.env.SESSION_TOKEN_TTL = '86400';
+    try {
+      const sanitizeWithTtl = sanitize();
+
+      const sanitizedInfo = sanitizeWithTtl({
+        message: 'session lasts 86400 seconds',
+      });
+
+      expect(sanitizedInfo.message).to.equal('session lasts 86400 seconds');
+    } finally {
+      delete process.env.SESSION_TOKEN_TTL;
+    }
+  });
+
   it('should let callers extend the defaults', function () {
     const sanitizeWithSsn = sanitize([...DEFAULT_SENSITIVE_KEYS, 'SSN']);
 
