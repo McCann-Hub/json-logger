@@ -90,10 +90,13 @@ export const DEFAULT_SENSITIVE_KEYS: readonly string[] = Object.freeze([
 
 // Flag and short number env values (AUTH_ENABLED=true, COOKIE_MAX_AGE=3600)
 // would otherwise be scrubbed from every log string that happens to contain
-// them. Numbers of six or more digits look like PINs or numeric tokens, so
-// those are still scrubbed.
+// them. Numbers of six or more digits, counting both sides of a decimal point,
+// look like PINs or numeric tokens, so those are still scrubbed.
+const isShortNumber = (value: string) =>
+  /^-?\d+(\.\d+)?$/.test(value) && value.replace(/\D/g, '').length <= 5;
+
 const isScrubbableValue = (value: string) =>
-  value !== '' && !/^(true|false|-?\d{1,5}(\.\d+)?)$/i.test(value);
+  value !== '' && !/^(true|false)$/i.test(value) && !isShortNumber(value);
 
 /**
  * Returns a function that sanitizes sensitive fields in a log object.

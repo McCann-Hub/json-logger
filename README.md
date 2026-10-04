@@ -83,7 +83,7 @@ const logger = Logger(undefined, [...DEFAULT_SENSITIVE_KEYS, 'SSN']);
 logger.info('User login', { password: 'secret123', ssn: '123-45-6789' });
 ```
 
-The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and numbers of up to five digits, so a flag like `AUTH_ENABLED=true` or a setting like `COOKIE_MAX_AGE=3600` doesn't redact every matching word or number in your logs. Numbers of six or more digits, such as a numeric API token, are still scrubbed.
+The logger also reads the values of environment variables whose names match a sensitive key and scrubs those values from every logged string. It skips `true`, `false`, and numbers of up to five digits, so a flag like `AUTH_ENABLED=true` or a setting like `COOKIE_MAX_AGE=3600` doesn't redact every matching word or number in your logs. Numbers with six or more digits in total, counting both sides of a decimal point, are still scrubbed. That covers a numeric API token like `123456` and a value like `12345.6`.
 
 #### Large arrays
 

@@ -307,6 +307,21 @@ describe('Logger Sanitization', function () {
     }
   });
 
+  it('should count digits on both sides of the decimal point', function () {
+    process.env.API_TOKEN = '12345.6';
+    try {
+      const sanitizeWithDecimalToken = sanitize();
+
+      const sanitizedInfo = sanitizeWithDecimalToken({
+        message: 'request token 12345.6',
+      });
+
+      expect(sanitizedInfo.message).to.equal('request token ***REDACTED***');
+    } finally {
+      delete process.env.API_TOKEN;
+    }
+  });
+
   it('should not scrub numeric env values of five digits or fewer', function () {
     process.env.SESSION_TOKEN_TTL = '86400';
     try {
