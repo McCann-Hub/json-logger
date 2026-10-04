@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sanitize, { LogObject } from '@utils/sanitize';
+import sanitize, { DEFAULT_SENSITIVE_KEYS, LogObject } from '@utils/sanitize';
 
 describe('Logger Sanitization', function () {
   let sanitizeLogs = sanitize();
@@ -17,6 +17,7 @@ describe('Logger Sanitization', function () {
     // Clean up mocked environment variables after each test
     delete process.env.API_PASSWORD;
     delete process.env.API_TOKEN;
+    delete process.env.SPECIAL_API_TOKEN;
   });
 
   it('should redact sensitive fields', function () {
@@ -215,5 +216,99 @@ describe('Logger Sanitization', function () {
     expect(sanitizedInfo.message).to.equal(
       'Log with null and undefined values'
     );
+  });
+
+  it('should redact authorization and cookie headers by default', function () {
+    const logInfo = {
+      headers: {
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9',
+        'Proxy-Authorization': 'Basic dXNlcjpwYXNz',
+        Cookie: 'session=abc123',
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const headers = sanitizeLogs(logInfo).headers as LogObject;
+
+    expect(headers.Authorization).to.equal('***REDACTED***');
+    expect(headers['Proxy-Authorization']).to.equal('***REDACTED***');
+    expect(headers.Cookie).to.equal('***REDACTED***');
+    expect(headers['Content-Type']).to.equal('application/json');
+  });
+
+  it('should redact every string in an array under a sensitive key', function () {
+    const logInfo = {
+      headers: {
+        'set-cookie': ['session=abc123; HttpOnly', 'theme=dark'],
+        vary: ['Accept', 'Origin'],
+      },
+    };
+
+    const headers = sanitizeLogs(logInfo).headers as LogObject;
+
+    expect(headers['set-cookie']).to.deep.equal([
+      '***REDACTED***',
+      '***REDACTED***',
+    ]);
+    expect(headers.vary).to.deep.equal(['Accept', 'Origin']);
+  });
+
+  it('should search objects under an auth key instead of replacing them', function () {
+    const logInfo = {
+      auth: { username: 'svc-user', password: 'hunter22' },
+    };
+
+    const auth = sanitizeLogs(logInfo).auth as LogObject;
+
+    expect(auth.username).to.equal('svc-user');
+    expect(auth.password).to.equal('***REDACTED***');
+  });
+
+  it('should not scrub flag or number env values from log strings', function () {
+    process.env.AUTH_ENABLED = 'true';
+    process.env.COOKIE_MAX_AGE = '3600';
+    try {
+      const sanitizeWithFlags = sanitize();
+
+      const sanitizedInfo = sanitizeWithFlags({
+        message: 'retry=true after 3600 ms',
+      });
+
+      expect(sanitizedInfo.message).to.equal('retry=true after 3600 ms');
+    } finally {
+      delete process.env.AUTH_ENABLED;
+      delete process.env.COOKIE_MAX_AGE;
+    }
+  });
+
+  it('should let callers extend the defaults', function () {
+    const sanitizeWithSsn = sanitize([...DEFAULT_SENSITIVE_KEYS, 'SSN']);
+
+    const sanitizedInfo = sanitizeWithSsn({
+      ssn: '123-45-6789',
+      authorization: 'Bearer abc',
+    });
+
+    expect(sanitizedInfo.ssn).to.equal('***REDACTED***');
+    expect(sanitizedInfo.authorization).to.equal('***REDACTED***');
+  });
+
+  it('should match custom keys regardless of their case', function () {
+    process.env.CUSTOMER_SSN = '123-45-6789';
+    try {
+      const sanitizeWithSsn = sanitize(['ssn', 'Pin']);
+
+      const sanitizedInfo = sanitizeWithSsn({
+        SSN: '123-45-6789',
+        card_pin: '0000',
+        message: 'customer 123-45-6789 called',
+      });
+
+      expect(sanitizedInfo.SSN).to.equal('***REDACTED***');
+      expect(sanitizedInfo.card_pin).to.equal('***REDACTED***');
+      expect(sanitizedInfo.message).to.equal('customer ***REDACTED*** called');
+    } finally {
+      delete process.env.CUSTOMER_SSN;
+    }
   });
 });
