@@ -18,6 +18,12 @@ npm install @mccann-hub/json-logger
 
 ## Usage
 
+The package ships ESM and CommonJS builds. From CommonJS, the logger factory is the `default` export:
+
+```javascript
+const Logger = require('@mccann-hub/json-logger').default;
+```
+
 ### Basic Setup
 
 Initialize the logger with default settings:
